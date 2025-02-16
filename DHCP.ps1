@@ -18,7 +18,10 @@ function validacion_ip_correcta {
 
     $octets = $IP.Split('.')
     foreach ($octet in $octets) {
-        if (-not ($octet -as [int] -and $octet -ge 0 -and $octet -le 255)) {
+        #Intentamos convertir el octeto a un numero entero
+        $octetInt = [int]$octet
+        #Verificamos si la conversión fue exitosa y si está en el rango válido
+        if ($null -eq $octetInt -or $octetInt -lt 0 -or $octetInt -gt 255) {
             Write-Host "Error: La IP no es valida, los octetos deben estar entre 0 y 255."
             return $false
         }
@@ -42,8 +45,8 @@ function validacion_ip_correcta {
 function validacion_rangos_ip {
     param($IP_INICIO, $IP_FIN, $IP_SERVIDOR)
 
-    if (-not (Validacion-IP-Correcta $IP_INICIO)) { return $false }
-    if (-not (Validacion-IP-Correcta $IP_FIN)) { return $false }
+    if (-not (validacion_ip_correcta $IP_INICIO)) { return $false }
+    if (-not (validacion_ip_correcta $IP_FIN)) { return $false }
 
     #Convertir IPs a numeros enteros y comparar
     $octetos_inicial = $IP_INICIO -split '\.'
@@ -61,13 +64,13 @@ function validacion_rangos_ip {
         return $false
     }
 
-    # Verificar que las IPs de inicio y fin esten dentro del mismo segmento de red que la IP del servidor
+    #Verificar que las IPs de inicio y fin esten dentro del mismo segmento de red que la IP del servidor
     $IP_SERVIDOR_ARRAY = $IP_SERVIDOR -split '\.'
     $IP_INICIO_ARRAY = $IP_INICIO -split '\.'
     $IP_FIN_ARRAY = $IP_FIN -split '\.'
 
     if ($IP_INICIO_ARRAY[0] -ne $IP_SERVIDOR_ARRAY[0] -or $IP_INICIO_ARRAY[1] -ne $IP_SERVIDOR_ARRAY[1] -or $IP_INICIO_ARRAY[2] -ne $IP_SERVIDOR_ARRAY[2]) {
-        Write-Host "Las IPs de inicio y fin no están en el mismo segmento de red que la IP del servidor."
+        Write-Host "Las IPs de inicio y fin no estan en el mismo segmento de red que la IP del servidor."
         return $false
     }
 
@@ -151,5 +154,6 @@ Write-Host "*** REINICIANDO EL SERVICIO ***"
 New-NetFirewallRule -DisplayName "Permitir Ping Entrante" -Direction Inbound -Protocol ICMPv4 -Action Allow
 Write-Host "*** REGLA ICMPv4 CONFIGURADA, AHORA PUEDE RECIBIR PING DEL CLIENTE ***"
 
+Write-Host "CONFIGURACION FINALIZADA EXITOSAMENTE :)"
 #Obtener lista de lease
 #Get-DhcpServerv4Lease -ScopeId "$($PRIMEROS_TRES_OCTETOS).0"
